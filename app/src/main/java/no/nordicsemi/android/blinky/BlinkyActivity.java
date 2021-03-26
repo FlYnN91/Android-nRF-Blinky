@@ -49,6 +49,8 @@ public class BlinkyActivity extends AppCompatActivity {
 
 	@BindView(R.id.bat_volt_state) TextView batVoltState;
 	@BindView(R.id.mot_volt_state) TextView motVoltState;
+	@BindView(R.id.lock_state) TextView lockState;
+	@BindView(R.id.window_state) TextView windowState;
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -73,6 +75,8 @@ public class BlinkyActivity extends AppCompatActivity {
 
 		// Set up views.
 		final TextView batVoltState = findViewById(R.id.bat_volt_state);
+		final TextView lockState = findViewById(R.id.lock_state);
+		final TextView windowState = findViewById(R.id.window_state);
 		final LinearLayout progressContainer = findViewById(R.id.progress_container);
 		final TextView connectionState = findViewById(R.id.connection_state);
 		final View content = findViewById(R.id.device_container);
@@ -113,6 +117,52 @@ public class BlinkyActivity extends AppCompatActivity {
 		viewModel.getMotVoltageState().observe(this, voltage -> {
 			motVoltState.setText(String.valueOf(voltage).concat("V"));
 		});
+		viewModel.getLockState().observe(this, lockStateData -> {
+			switch(lockStateData)
+			{
+				case LOCK_IDLE_STATE:
+					lockState.setText(R.string.LOCK_IDLE_STATE);
+					break;
+				case LOCK_ERROR_STATE:
+					lockState.setText(R.string.LOCK_ERROR_STATE);
+					break;
+				case LOCK_LOCKED_STATE:
+					lockState.setText(R.string.LOCK_LOCKED_STATE);
+					break;
+				case LOCK_MOVING_STATE:
+					lockState.setText(R.string.LOCK_MOVING_STATE);
+					break;
+				case LOCK_UNLOCKED_STATE:
+					lockState.setText(R.string.LOCK_UNLOCKED_STATE);
+					break;
+				default:
+					lockState.setText(R.string.default_lock_state);
+					break;
+			}
+		});
+		viewModel.getWindowState().observe(this, winStateData -> {
+			switch(winStateData)
+			{
+				case WINDOW_CLOSED_STATE:
+					windowState.setText(R.string.WINDOW_CLOSED_STATE);
+					break;
+				case WINDOW_ERROR_STATE:
+					windowState.setText(R.string.WINDOW_ERROR_STATE);
+					break;
+				case WINDOW_IDLE_STATE:
+					windowState.setText(R.string.WINDOW_IDLE_STATE);
+					break;
+				case WINDOW_MOVING_STATE:
+					windowState.setText(R.string.WINDOW_MOVING_STATE);
+					break;
+				case WINDOW_OPENED_STATE:
+					windowState.setText(R.string.WINDOW_OPENED_STATE);
+					break;
+				default:
+					windowState.setText(R.string.default_window_state);
+					break;
+			}
+		});
 	}
 
 	@OnClick(R.id.action_clear_cache)
@@ -124,6 +174,8 @@ public class BlinkyActivity extends AppCompatActivity {
 		if (!connected) {
 			batVoltState.setText(R.string.default_bat_volt);
 			motVoltState.setText(R.string.button_unknown);
+			lockState.setText(R.string.default_lock_state);
+			windowState.setText(R.string.default_window_state);
 		}
 	}
 }

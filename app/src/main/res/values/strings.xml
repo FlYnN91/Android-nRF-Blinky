@@ -31,6 +31,10 @@
 	<string name="unknown_device">Unknown Device</string>
 	<string name="turn_on">On</string>
 	<string name="turn_off">10.0V</string>
+	<string name="default_lock_state">UNKNOWN</string>
+	<string name="default_window_state">UNKNOWN</string>
+	<string name="title_window_state">Window Status</string>
+	<string name="title_lock_state">Lock Status</string>
 	<string name="title_led_state">Battery Voltage</string>
 	<string name="title_mot_volt_state">Motor Voltage</string>
 	<string name="title_button_state">Button</string>
@@ -41,7 +45,21 @@
 	<string name="button_unknown">Unknown</string>
 	<string name="led_summary">Battery Voltage state</string>
 	<string name="mot_volt_summary">Motor Operating state</string>
+	<string name="lock_sts_summary">Lock state</string>
+	<string name="window_sts_summary">Window state</string>
 	<string name="button_summary">Press Button 1 on the dev kit.</string>
+
+	<string name="LOCK_IDLE_STATE">IDLE</string>
+	<string name="LOCK_ERROR_STATE">ERROR</string>
+	<string name="LOCK_UNLOCKED_STATE">UNLOCKED</string>
+	<string name="LOCK_LOCKED_STATE">LOCKED</string>
+	<string name="LOCK_MOVING_STATE">MOVING</string>
+
+	<string name="WINDOW_IDLE_STATE">IDLE</string>
+	<string name="WINDOW_ERROR_STATE">ERROR</string>
+	<string name="WINDOW_OPENED_STATE">UNLOCKED</string>
+	<string name="WINDOW_CLOSED_STATE">LOCKED</string>
+	<string name="WINDOW_MOVING_STATE">MOVING</string>
 
 	<string name="location_permission_title">LOCATION PERMISSION REQUIRED</string>
 	<string name="location_permission_info">From Android 6.0 Marshmallow onwards the application requires Location permission in order to scan for Bluetooth Low Energy devices.

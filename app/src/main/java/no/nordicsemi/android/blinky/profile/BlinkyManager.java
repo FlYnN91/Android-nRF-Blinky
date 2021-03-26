@@ -41,7 +41,9 @@ import no.nordicsemi.android.ble.livedata.ObservableBleManager;
 import no.nordicsemi.android.blinky.profile.callback.BlinkyButtonDataCallback;
 import no.nordicsemi.android.blinky.profile.callback.BatteryVoltageDataCallback;
 import no.nordicsemi.android.blinky.profile.callback.MotorVoltageDataCallback;
-import no.nordicsemi.android.blinky.profile.data.BlinkyLED;
+import no.nordicsemi.android.blinky.profile.callback.WindowLockDataCallback;
+import no.nordicsemi.android.blinky.profile.data.e_lock_state;
+import no.nordicsemi.android.blinky.profile.data.e_window_state;
 import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.LogSession;
 import no.nordicsemi.android.log.Logger;
@@ -65,12 +67,16 @@ public class BlinkyManager extends ObservableBleManager {
 	private final MutableLiveData<Float> batVoltState = new MutableLiveData<>();
 	private final MutableLiveData<Float> motVoltState = new MutableLiveData<>();
 	private final MutableLiveData<Boolean> buttonState = new MutableLiveData<>();
+	private final MutableLiveData<e_window_state> windowState = new MutableLiveData<>();
+	private final MutableLiveData<e_lock_state> lockState = new MutableLiveData<>();
 
-	private BluetoothGattCharacteristic buttonCharacteristic, batVoltCharacteristic,motVoltCharacteristic;
+	private BluetoothGattCharacteristic buttonCharacteristic, batVoltCharacteristic,motVoltCharacteristic,winLockCharacteristic;
 	private LogSession logSession;
 	private boolean supported;
 	private float batVoltActual;
 	private float motVoltActual;
+	private e_window_state window_state;
+	private e_lock_state lock_state;
 
 	public BlinkyManager(@NonNull final Context context) {
 		super(context);
@@ -86,6 +92,15 @@ public class BlinkyManager extends ObservableBleManager {
 
 	public final LiveData<Boolean> getButtonState() {
 		return buttonState;
+	}
+
+	public final LiveData<e_lock_state> getLockState()
+	{
+		return lockState;
+	}
+	public final LiveData<e_window_state> getWindowState()
+	{
+		return windowState;
 	}
 
 	@NonNull
@@ -182,6 +197,30 @@ public class BlinkyManager extends ObservableBleManager {
 		}
 	};
 
+	private final WindowLockDataCallback windowLockCallback = new WindowLockDataCallback() {
+		@Override
+		public void onWindowStateChanged(@NonNull final BluetoothDevice device,
+									  final e_window_state state) {
+			window_state = state;
+			log(LogContract.Log.Level.APPLICATION, "Window State " + state);
+			windowState.setValue(state);
+		}
+		@Override
+		public void onLockStateChanged(@NonNull final BluetoothDevice device,
+									  final e_lock_state state) {
+			lock_state = state;
+			log(LogContract.Log.Level.APPLICATION, "Lock State " + state);
+			lockState.setValue(state);
+		}
+
+		@Override
+		public void onInvalidDataReceived(@NonNull final BluetoothDevice device,
+										  @NonNull final Data data) {
+			// Data can only invalid if we read them. We assume the app always sends correct data.
+			log(Log.WARN, "Invalid data received: " + data);
+		}
+	};
+
 	/**
 	 * BluetoothGatt callbacks object.
 	 */
@@ -189,10 +228,16 @@ public class BlinkyManager extends ObservableBleManager {
 		@Override
 		protected void initialize() {
 			setNotificationCallback(buttonCharacteristic).with(buttonCallback);
-			readCharacteristic(batVoltCharacteristic).with(batVoltCallback).enqueue();
-			readCharacteristic(motVoltCharacteristic).with(motVoltCallback).enqueue();
-			readCharacteristic(buttonCharacteristic).with(buttonCallback).enqueue();
+
+			setNotificationCallback(batVoltCharacteristic).with(batVoltCallback);
+			setNotificationCallback(motVoltCharacteristic).with(motVoltCallback);
+			setNotificationCallback(buttonCharacteristic).with(buttonCallback);
+			setNotificationCallback(winLockCharacteristic).with(windowLockCallback);
+
 			enableNotifications(buttonCharacteristic).enqueue();
+			enableNotifications(batVoltCharacteristic).enqueue();
+			enableNotifications(motVoltCharacteristic).enqueue();
+			enableNotifications(winLockCharacteristic).enqueue();
 		}
 
 		@Override
@@ -202,6 +247,7 @@ public class BlinkyManager extends ObservableBleManager {
 				buttonCharacteristic = service.getCharacteristic(LBS_UUID_BUTTON_CHAR);
 				batVoltCharacteristic = service.getCharacteristic(LBS_UUID_BAT_VOLT_CHAR);
 				motVoltCharacteristic = service.getCharacteristic(LBS_UUID_MOT_VOLT_CHAR);
+				winLockCharacteristic = service.getCharacteristic(LBS_UUID_WINDOW_CHAR);
 			}
 
 			boolean batVoltNotifyRequest = false;
@@ -216,8 +262,15 @@ public class BlinkyManager extends ObservableBleManager {
 				motVoltNotifyRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0;
 			}
 
+			boolean winLockNotifyRequest = false;
+			if (winLockCharacteristic != null) {
+				final int rxProperties = winLockCharacteristic.getProperties();
+				winLockNotifyRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0;
+			}
+
 			supported = buttonCharacteristic != null &&
 					(batVoltCharacteristic != null && batVoltNotifyRequest) &&
+					(winLockCharacteristic != null && winLockNotifyRequest) &&
 					(motVoltCharacteristic != null && motVoltNotifyRequest);
 			return supported;
 		}
@@ -227,6 +280,7 @@ public class BlinkyManager extends ObservableBleManager {
 			buttonCharacteristic = null;
 			batVoltCharacteristic = null;
 			motVoltCharacteristic = null;
+			winLockCharacteristic = null;
 		}
 	}
 }

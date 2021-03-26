@@ -32,6 +32,8 @@ import androidx.lifecycle.LiveData;
 import no.nordicsemi.android.ble.livedata.state.ConnectionState;
 import no.nordicsemi.android.blinky.adapter.DiscoveredBluetoothDevice;
 import no.nordicsemi.android.blinky.profile.BlinkyManager;
+import no.nordicsemi.android.blinky.profile.data.e_lock_state;
+import no.nordicsemi.android.blinky.profile.data.e_window_state;
 import no.nordicsemi.android.log.LogSession;
 import no.nordicsemi.android.log.Logger;
 
@@ -60,6 +62,14 @@ public class BlinkyViewModel extends AndroidViewModel {
 
 	public LiveData<Float> getMotVoltageState() {
 		return blinkyManager.getMotVoltState();
+	}
+
+	public LiveData<e_window_state> getWindowState() {
+		return blinkyManager.getWindowState();
+	}
+
+	public LiveData<e_lock_state> getLockState() {
+		return blinkyManager.getLockState();
 	}
 
 	/**
