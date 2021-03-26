@@ -21,8 +21,8 @@
   -->
 
 <resources>
-	<string name="app_name">nRF Blinky</string>
-	<string name="feature_name">BLINKY</string>
+	<string name="app_name">Ottolox</string>
+	<string name="feature_name">Ottolox</string>
 
 	<string name="menu_filter">Filter</string>
 	<string name="menu_filter_uuid">Only devices advertising LBS UUID</string>

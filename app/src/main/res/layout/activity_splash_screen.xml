@@ -35,12 +35,9 @@
 	tools:context=".SplashScreenActivity"
 	tools:ignore="ContentDescription">
 
-	<androidx.appcompat.widget.AppCompatImageView
-		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		android:fitsSystemWindows="true"
-		android:scaleType="centerCrop"
-		android:background="@color/colorNordicLogoTop"
-		app:srcCompat="@drawable/nordic_logo"/>
-	
+	<ImageView
+		android:id="@+id/imageView3"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:src="@drawable/robtic_logo" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
