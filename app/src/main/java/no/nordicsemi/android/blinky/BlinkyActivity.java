@@ -51,6 +51,8 @@ public class BlinkyActivity extends AppCompatActivity {
 	@BindView(R.id.mot_volt_state) TextView motVoltState;
 	@BindView(R.id.lock_state) TextView lockState;
 	@BindView(R.id.window_state) TextView windowState;
+	@BindView(R.id.window_sts_tool_bar) MaterialToolbar window_toolbar;
+	@BindView(R.id.lock_sts_tool_bar) MaterialToolbar lock_toolbar;
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -74,6 +76,8 @@ public class BlinkyActivity extends AppCompatActivity {
 		viewModel.connect(device);
 
 		// Set up views.
+		final MaterialToolbar winToolbar = findViewById(R.id.window_sts_tool_bar);
+		final MaterialToolbar lockToolbar = findViewById(R.id.lock_sts_tool_bar);
 		final TextView batVoltState = findViewById(R.id.bat_volt_state);
 		final TextView lockState = findViewById(R.id.lock_state);
 		final TextView windowState = findViewById(R.id.window_state);
@@ -128,12 +132,14 @@ public class BlinkyActivity extends AppCompatActivity {
 					break;
 				case LOCK_LOCKED_STATE:
 					lockState.setText(R.string.LOCK_LOCKED_STATE);
+					lockToolbar.setLogo(R.drawable.ic_lock_locked);
 					break;
 				case LOCK_MOVING_STATE:
 					lockState.setText(R.string.LOCK_MOVING_STATE);
 					break;
 				case LOCK_UNLOCKED_STATE:
 					lockState.setText(R.string.LOCK_UNLOCKED_STATE);
+					lockToolbar.setLogo(R.drawable.ic_lock_unlocked);
 					break;
 				default:
 					lockState.setText(R.string.default_lock_state);
@@ -145,9 +151,11 @@ public class BlinkyActivity extends AppCompatActivity {
 			{
 				case WINDOW_CLOSED_STATE:
 					windowState.setText(R.string.WINDOW_CLOSED_STATE);
+					winToolbar.setLogo(R.drawable.ic_window_locked);
 					break;
 				case WINDOW_ERROR_STATE:
 					windowState.setText(R.string.WINDOW_ERROR_STATE);
+					winToolbar.setLogo(R.drawable.ic_window_open);
 					break;
 				case WINDOW_IDLE_STATE:
 					windowState.setText(R.string.WINDOW_IDLE_STATE);
@@ -157,6 +165,7 @@ public class BlinkyActivity extends AppCompatActivity {
 					break;
 				case WINDOW_OPENED_STATE:
 					windowState.setText(R.string.WINDOW_OPENED_STATE);
+					winToolbar.setLogo(R.drawable.ic_window_open);
 					break;
 				default:
 					windowState.setText(R.string.default_window_state);
