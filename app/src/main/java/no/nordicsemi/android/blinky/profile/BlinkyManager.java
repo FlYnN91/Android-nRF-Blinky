@@ -42,6 +42,7 @@ import no.nordicsemi.android.blinky.profile.callback.BlinkyButtonDataCallback;
 import no.nordicsemi.android.blinky.profile.callback.BatteryVoltageDataCallback;
 import no.nordicsemi.android.blinky.profile.callback.MotorVoltageDataCallback;
 import no.nordicsemi.android.blinky.profile.callback.WindowLockDataCallback;
+import no.nordicsemi.android.blinky.profile.data.ReqWindowState;
 import no.nordicsemi.android.blinky.profile.data.e_lock_state;
 import no.nordicsemi.android.blinky.profile.data.e_window_state;
 import no.nordicsemi.android.log.LogContract;
@@ -64,15 +65,17 @@ public class BlinkyManager extends ObservableBleManager {
 	/** Limit Switch Status characteristic UUID */
 	private final static UUID LBS_UUID_LIM_SW_STS_CHAR = UUID.fromString("00005306-e91e-4df7-a812-0c16593976e5");
 
+	private final MutableLiveData<Boolean> reqWindowCmd = new MutableLiveData<>();
 	private final MutableLiveData<Float> batVoltState = new MutableLiveData<>();
 	private final MutableLiveData<Float> motVoltState = new MutableLiveData<>();
 	private final MutableLiveData<Boolean> buttonState = new MutableLiveData<>();
 	private final MutableLiveData<e_window_state> windowState = new MutableLiveData<>();
 	private final MutableLiveData<e_lock_state> lockState = new MutableLiveData<>();
 
-	private BluetoothGattCharacteristic buttonCharacteristic, batVoltCharacteristic,motVoltCharacteristic,winLockCharacteristic;
+	private BluetoothGattCharacteristic buttonCharacteristic, batVoltCharacteristic,motVoltCharacteristic,winLockCharacteristic, reqWindowCharacteristic;
 	private LogSession logSession;
 	private boolean supported;
+	private boolean reqWindowsts;
 	private float batVoltActual;
 	private float motVoltActual;
 	private e_window_state window_state;
@@ -92,6 +95,9 @@ public class BlinkyManager extends ObservableBleManager {
 
 	public final LiveData<Boolean> getButtonState() {
 		return buttonState;
+	}
+	public final LiveData<Boolean> getWindowRequest() {
+		return reqWindowCmd;
 	}
 
 	public final LiveData<e_lock_state> getLockState()
@@ -248,6 +254,13 @@ public class BlinkyManager extends ObservableBleManager {
 				batVoltCharacteristic = service.getCharacteristic(LBS_UUID_BAT_VOLT_CHAR);
 				motVoltCharacteristic = service.getCharacteristic(LBS_UUID_MOT_VOLT_CHAR);
 				winLockCharacteristic = service.getCharacteristic(LBS_UUID_WINDOW_CHAR);
+				reqWindowCharacteristic = service.getCharacteristic(LBS_UUID_WINDOW_CMD_CHAR);
+			}
+
+			boolean cmdWriteRequest = false;
+			if (reqWindowCmd != null) {
+				final int rxProperties = reqWindowCharacteristic.getProperties();
+				cmdWriteRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0;
 			}
 
 			boolean batVoltNotifyRequest = false;
@@ -271,6 +284,7 @@ public class BlinkyManager extends ObservableBleManager {
 			supported = buttonCharacteristic != null &&
 					(batVoltCharacteristic != null && batVoltNotifyRequest) &&
 					(winLockCharacteristic != null && winLockNotifyRequest) &&
+					(reqWindowCharacteristic != null && cmdWriteRequest) &&
 					(motVoltCharacteristic != null && motVoltNotifyRequest);
 			return supported;
 		}
@@ -281,6 +295,23 @@ public class BlinkyManager extends ObservableBleManager {
 			batVoltCharacteristic = null;
 			motVoltCharacteristic = null;
 			winLockCharacteristic = null;
+			reqWindowCharacteristic = null;
 		}
+	}
+
+	/**
+	 * Sends a request to the device to turn the Window on or off.
+	 *
+	 * @param on true to turn the Window on, false to turn it off.
+	 */
+	public void setWindowReq(final boolean on) {
+		// Are we connected?
+		if (reqWindowCharacteristic == null)
+			return;
+
+		log(Log.VERBOSE, "Window State " + (on ? "ON" : "OFF") + "...");
+		writeCharacteristic(reqWindowCharacteristic,
+				on ? ReqWindowState.turnOn() : ReqWindowState.turnOff())
+				.with(windowLockCallback).enqueue();
 	}
 }

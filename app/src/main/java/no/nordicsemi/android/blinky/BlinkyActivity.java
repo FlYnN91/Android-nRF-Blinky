@@ -53,6 +53,7 @@ public class BlinkyActivity extends AppCompatActivity {
 	@BindView(R.id.window_state) TextView windowState;
 	@BindView(R.id.window_sts_tool_bar) MaterialToolbar window_toolbar;
 	@BindView(R.id.lock_sts_tool_bar) MaterialToolbar lock_toolbar;
+	@BindView(R.id.req_win_state) SwitchMaterial req_win_state;
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -86,6 +87,7 @@ public class BlinkyActivity extends AppCompatActivity {
 		final View content = findViewById(R.id.device_container);
 		final View notSupported = findViewById(R.id.not_supported);
 
+		req_win_state.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.setWindowRequest(isChecked));
 		viewModel.getConnectionState().observe(this, state -> {
 			switch (state.getState()) {
 				case CONNECTING:

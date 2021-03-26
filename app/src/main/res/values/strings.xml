@@ -61,6 +61,9 @@
 	<string name="WINDOW_CLOSED_STATE">LOCKED</string>
 	<string name="WINDOW_MOVING_STATE">MOVING</string>
 
+	<string name="req_window_title">Command Window</string>
+	<string name="req_window_summary">Command Window</string>
+
 	<string name="location_permission_title">LOCATION PERMISSION REQUIRED</string>
 	<string name="location_permission_info">From Android 6.0 Marshmallow onwards the application requires Location permission in order to scan for Bluetooth Low Energy devices.
       \n\nThis is because Bluetooth LE beacons, for example iBeacons or Eddystone, may be used to determine the phone\'s and user\'s location. <b>nRF Blinky</b> will not use this information in any way.</string>

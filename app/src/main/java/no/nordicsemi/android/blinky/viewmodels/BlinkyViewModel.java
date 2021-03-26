@@ -115,9 +115,10 @@ public class BlinkyViewModel extends AndroidViewModel {
 	 *
 	 * @param on true to turn the LED on, false to turn it OFF.
 	 */
-	public void setLedState(final boolean on) {
-//		blinkyManager.turnLed(on);
+	public void setWindowRequest(final boolean on) {
+		blinkyManager.setWindowReq(on);
 	}
+
 
 	@Override
 	protected void onCleared() {
