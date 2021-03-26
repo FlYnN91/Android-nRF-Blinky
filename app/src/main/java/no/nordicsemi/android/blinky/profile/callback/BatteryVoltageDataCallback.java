@@ -30,9 +30,7 @@ import no.nordicsemi.android.ble.callback.profile.ProfileDataCallback;
 import no.nordicsemi.android.ble.data.Data;
 
 @SuppressWarnings("ConstantConditions")
-public abstract class BlinkyLedDataCallback implements ProfileDataCallback, DataSentCallback, BlinkyLedCallback {
-    private static final byte STATE_OFF = 0x00;
-    private static final byte STATE_ON = 0x01;
+public abstract class BatteryVoltageDataCallback implements ProfileDataCallback, DataSentCallback, BatteryVoltageCallback {
 
     @Override
     public void onDataReceived(@NonNull final BluetoothDevice device, @NonNull final Data data) {
@@ -45,18 +43,12 @@ public abstract class BlinkyLedDataCallback implements ProfileDataCallback, Data
     }
 
     private void parse(@NonNull final BluetoothDevice device, @NonNull final Data data) {
-        if (data.size() != 1) {
+        if (data.size() != 2) {
             onInvalidDataReceived(device, data);
             return;
         }
 
-        final int state = data.getIntValue(Data.FORMAT_UINT8, 0);
-        if (state == STATE_ON) {
-            onLedStateChanged(device, true);
-        } else if (state == STATE_OFF) {
-            onLedStateChanged(device, false);
-        } else {
-            onInvalidDataReceived(device, data);
-        }
+        final int raw_reading = data.getIntValue(Data.FORMAT_UINT16, 0);
+        onBatVoltStateChanged(device, raw_reading);
     }
 }

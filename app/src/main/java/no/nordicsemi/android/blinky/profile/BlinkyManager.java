@@ -39,7 +39,8 @@ import java.util.UUID;
 import no.nordicsemi.android.ble.data.Data;
 import no.nordicsemi.android.ble.livedata.ObservableBleManager;
 import no.nordicsemi.android.blinky.profile.callback.BlinkyButtonDataCallback;
-import no.nordicsemi.android.blinky.profile.callback.BlinkyLedDataCallback;
+import no.nordicsemi.android.blinky.profile.callback.BatteryVoltageDataCallback;
+import no.nordicsemi.android.blinky.profile.callback.MotorVoltageDataCallback;
 import no.nordicsemi.android.blinky.profile.data.BlinkyLED;
 import no.nordicsemi.android.log.LogContract;
 import no.nordicsemi.android.log.LogSession;
@@ -47,26 +48,40 @@ import no.nordicsemi.android.log.Logger;
 
 public class BlinkyManager extends ObservableBleManager {
 	/** Nordic Blinky Service UUID. */
-	public final static UUID LBS_UUID_SERVICE = UUID.fromString("00001523-1212-efde-1523-785feabcd123");
+	public final static UUID LBS_UUID_SERVICE = UUID.fromString("00005300-e91e-4df7-a812-0c16593976e5");
 	/** BUTTON characteristic UUID. */
-	private final static UUID LBS_UUID_BUTTON_CHAR = UUID.fromString("00001524-1212-efde-1523-785feabcd123");
-	/** LED characteristic UUID. */
-	private final static UUID LBS_UUID_LED_CHAR = UUID.fromString("00001525-1212-efde-1523-785feabcd123");
+	private final static UUID LBS_UUID_BUTTON_CHAR = UUID.fromString("00005301-e91e-4df7-a812-0c16593976e5");
+	/** Battery Voltage characteristic UUID. */
+	private final static UUID LBS_UUID_BAT_VOLT_CHAR = UUID.fromString("00005302-e91e-4df7-a812-0c16593976e5");
+	/** Motor Voltage characteristic UUID */
+	private final static UUID LBS_UUID_MOT_VOLT_CHAR = UUID.fromString("00005303-e91e-4df7-a812-0c16593976e5");
+	/** Window Status characteristic UUID */
+	private final static UUID LBS_UUID_WINDOW_CHAR = UUID.fromString("00005304-e91e-4df7-a812-0c16593976e5");
+	/** Window Command characteristic UUID */
+	private final static UUID LBS_UUID_WINDOW_CMD_CHAR = UUID.fromString("00005305-e91e-4df7-a812-0c16593976e5");
+	/** Limit Switch Status characteristic UUID */
+	private final static UUID LBS_UUID_LIM_SW_STS_CHAR = UUID.fromString("00005306-e91e-4df7-a812-0c16593976e5");
 
-	private final MutableLiveData<Boolean> ledState = new MutableLiveData<>();
+	private final MutableLiveData<Float> batVoltState = new MutableLiveData<>();
+	private final MutableLiveData<Float> motVoltState = new MutableLiveData<>();
 	private final MutableLiveData<Boolean> buttonState = new MutableLiveData<>();
 
-	private BluetoothGattCharacteristic buttonCharacteristic, ledCharacteristic;
+	private BluetoothGattCharacteristic buttonCharacteristic, batVoltCharacteristic,motVoltCharacteristic;
 	private LogSession logSession;
 	private boolean supported;
-	private boolean ledOn;
+	private float batVoltActual;
+	private float motVoltActual;
 
 	public BlinkyManager(@NonNull final Context context) {
 		super(context);
 	}
 
-	public final LiveData<Boolean> getLedState() {
-		return ledState;
+	public final LiveData<Float> getbatVoltState() {
+		return batVoltState;
+	}
+
+	public final LiveData<Float> getMotVoltState() {
+		return motVoltState;
 	}
 
 	public final LiveData<Boolean> getButtonState() {
@@ -130,16 +145,33 @@ public class BlinkyManager extends ObservableBleManager {
 	 * method on success.
 	 * <p>
 	 * If the data received were invalid, the
-	 * {@link BlinkyLedDataCallback#onInvalidDataReceived(BluetoothDevice, Data)} will be
+	 * {@link BatteryVoltageDataCallback#onInvalidDataReceived(BluetoothDevice, Data)} will be
 	 * called.
 	 */
-	private final BlinkyLedDataCallback ledCallback = new BlinkyLedDataCallback() {
+	private final BatteryVoltageDataCallback batVoltCallback = new BatteryVoltageDataCallback() {
 		@Override
-		public void onLedStateChanged(@NonNull final BluetoothDevice device,
-									  final boolean on) {
-			ledOn = on;
-			log(LogContract.Log.Level.APPLICATION, "LED " + (on ? "ON" : "OFF"));
-			ledState.setValue(on);
+		public void onBatVoltStateChanged(@NonNull final BluetoothDevice device,
+									  final Integer raw_data) {
+			batVoltActual = (float)raw_data/100.0f;
+			log(LogContract.Log.Level.APPLICATION, "Battery Voltage RAW " + raw_data);
+			batVoltState.setValue(batVoltActual);
+		}
+
+		@Override
+		public void onInvalidDataReceived(@NonNull final BluetoothDevice device,
+										  @NonNull final Data data) {
+			// Data can only invalid if we read them. We assume the app always sends correct data.
+			log(Log.WARN, "Invalid data received: " + data);
+		}
+	};
+
+	private final MotorVoltageDataCallback motVoltCallback = new MotorVoltageDataCallback() {
+		@Override
+		public void onMotVoltStateChanged(@NonNull final BluetoothDevice device,
+									  final Integer raw_data) {
+			motVoltActual = (float)raw_data/100.0f;
+			log(LogContract.Log.Level.APPLICATION, "Motor Voltage RAW " + raw_data);
+			motVoltState.setValue(motVoltActual);
 		}
 
 		@Override
@@ -157,7 +189,8 @@ public class BlinkyManager extends ObservableBleManager {
 		@Override
 		protected void initialize() {
 			setNotificationCallback(buttonCharacteristic).with(buttonCallback);
-			readCharacteristic(ledCharacteristic).with(ledCallback).enqueue();
+			readCharacteristic(batVoltCharacteristic).with(batVoltCallback).enqueue();
+			readCharacteristic(motVoltCharacteristic).with(motVoltCallback).enqueue();
 			readCharacteristic(buttonCharacteristic).with(buttonCallback).enqueue();
 			enableNotifications(buttonCharacteristic).enqueue();
 		}
@@ -167,43 +200,33 @@ public class BlinkyManager extends ObservableBleManager {
 			final BluetoothGattService service = gatt.getService(LBS_UUID_SERVICE);
 			if (service != null) {
 				buttonCharacteristic = service.getCharacteristic(LBS_UUID_BUTTON_CHAR);
-				ledCharacteristic = service.getCharacteristic(LBS_UUID_LED_CHAR);
+				batVoltCharacteristic = service.getCharacteristic(LBS_UUID_BAT_VOLT_CHAR);
+				motVoltCharacteristic = service.getCharacteristic(LBS_UUID_MOT_VOLT_CHAR);
 			}
 
-			boolean writeRequest = false;
-			if (ledCharacteristic != null) {
-				final int rxProperties = ledCharacteristic.getProperties();
-				writeRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0;
+			boolean batVoltNotifyRequest = false;
+			if (batVoltCharacteristic != null) {
+				final int rxProperties = batVoltCharacteristic.getProperties();
+				batVoltNotifyRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0;
 			}
 
-			supported = buttonCharacteristic != null && ledCharacteristic != null && writeRequest;
+			boolean motVoltNotifyRequest = false;
+			if (motVoltCharacteristic != null) {
+				final int rxProperties = motVoltCharacteristic.getProperties();
+				motVoltNotifyRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0;
+			}
+
+			supported = buttonCharacteristic != null &&
+					(batVoltCharacteristic != null && batVoltNotifyRequest) &&
+					(motVoltCharacteristic != null && motVoltNotifyRequest);
 			return supported;
 		}
 
 		@Override
 		protected void onDeviceDisconnected() {
 			buttonCharacteristic = null;
-			ledCharacteristic = null;
+			batVoltCharacteristic = null;
+			motVoltCharacteristic = null;
 		}
-	}
-
-	/**
-	 * Sends a request to the device to turn the LED on or off.
-	 *
-	 * @param on true to turn the LED on, false to turn it off.
-	 */
-	public void turnLed(final boolean on) {
-		// Are we connected?
-		if (ledCharacteristic == null)
-			return;
-
-		// No need to change?
-		if (ledOn == on)
-			return;
-
-		log(Log.VERBOSE, "Turning LED " + (on ? "ON" : "OFF") + "...");
-		writeCharacteristic(ledCharacteristic,
-				on ? BlinkyLED.turnOn() : BlinkyLED.turnOff())
-				.with(ledCallback).enqueue();
 	}
 }

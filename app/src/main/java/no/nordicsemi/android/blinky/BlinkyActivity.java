@@ -47,8 +47,8 @@ public class BlinkyActivity extends AppCompatActivity {
 
 	private BlinkyViewModel viewModel;
 
-	@BindView(R.id.led_switch) SwitchMaterial led;
-	@BindView(R.id.button_state) TextView buttonState;
+	@BindView(R.id.bat_volt_state) TextView batVoltState;
+	@BindView(R.id.mot_volt_state) TextView motVoltState;
 
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
@@ -72,13 +72,12 @@ public class BlinkyActivity extends AppCompatActivity {
 		viewModel.connect(device);
 
 		// Set up views.
-		final TextView ledState = findViewById(R.id.led_state);
+		final TextView batVoltState = findViewById(R.id.bat_volt_state);
 		final LinearLayout progressContainer = findViewById(R.id.progress_container);
 		final TextView connectionState = findViewById(R.id.connection_state);
 		final View content = findViewById(R.id.device_container);
 		final View notSupported = findViewById(R.id.not_supported);
 
-		led.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.setLedState(isChecked));
 		viewModel.getConnectionState().observe(this, state -> {
 			switch (state.getState()) {
 				case CONNECTING:
@@ -108,13 +107,12 @@ public class BlinkyActivity extends AppCompatActivity {
 					break;
 			}
 		});
-		viewModel.getLedState().observe(this, isOn -> {
-			ledState.setText(isOn ? R.string.turn_on : R.string.turn_off);
-			led.setChecked(isOn);
+		viewModel.getBatVoltageState().observe(this, voltage -> {
+			batVoltState.setText(String.valueOf(voltage).concat("V"));
 		});
-		viewModel.getButtonState().observe(this,
-				pressed -> buttonState.setText(pressed ?
-						R.string.button_pressed : R.string.button_released));
+		viewModel.getMotVoltageState().observe(this, voltage -> {
+			motVoltState.setText(String.valueOf(voltage).concat("V"));
+		});
 	}
 
 	@OnClick(R.id.action_clear_cache)
@@ -123,10 +121,9 @@ public class BlinkyActivity extends AppCompatActivity {
 	}
 
 	private void onConnectionStateChanged(final boolean connected) {
-		led.setEnabled(connected);
 		if (!connected) {
-			led.setChecked(false);
-			buttonState.setText(R.string.button_unknown);
+			batVoltState.setText(R.string.default_bat_volt);
+			motVoltState.setText(R.string.button_unknown);
 		}
 	}
 }

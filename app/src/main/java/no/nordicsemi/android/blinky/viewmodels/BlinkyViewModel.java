@@ -54,8 +54,12 @@ public class BlinkyViewModel extends AndroidViewModel {
 		return blinkyManager.getButtonState();
 	}
 
-	public LiveData<Boolean> getLedState() {
-		return blinkyManager.getLedState();
+	public LiveData<Float> getBatVoltageState() {
+		return blinkyManager.getbatVoltState();
+	}
+
+	public LiveData<Float> getMotVoltageState() {
+		return blinkyManager.getMotVoltState();
 	}
 
 	/**
@@ -102,7 +106,7 @@ public class BlinkyViewModel extends AndroidViewModel {
 	 * @param on true to turn the LED on, false to turn it OFF.
 	 */
 	public void setLedState(final boolean on) {
-		blinkyManager.turnLed(on);
+//		blinkyManager.turnLed(on);
 	}
 
 	@Override
