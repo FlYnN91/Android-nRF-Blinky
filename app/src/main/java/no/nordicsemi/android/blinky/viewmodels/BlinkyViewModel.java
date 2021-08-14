@@ -72,6 +72,8 @@ public class BlinkyViewModel extends AndroidViewModel {
 		return blinkyManager.getLockState();
 	}
 
+	public LiveData<Byte> getWindowOpenDistance(){return blinkyManager.getOpenDistance();}
+
 	/**
 	 * Connect to the given peripheral.
 	 *
@@ -119,6 +121,9 @@ public class BlinkyViewModel extends AndroidViewModel {
 		blinkyManager.setWindowReq(on);
 	}
 
+	public void setOpenDistance(final byte distance) {
+		blinkyManager.setWindowOpenDistance(distance);
+	}
 
 	@Override
 	protected void onCleared() {

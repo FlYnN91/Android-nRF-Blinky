@@ -43,6 +43,7 @@ import no.nordicsemi.android.blinky.profile.callback.BatteryVoltageDataCallback;
 import no.nordicsemi.android.blinky.profile.callback.MotorVoltageDataCallback;
 import no.nordicsemi.android.blinky.profile.callback.WindowLockDataCallback;
 import no.nordicsemi.android.blinky.profile.data.ReqWindowState;
+import no.nordicsemi.android.blinky.profile.data.WindowConfig;
 import no.nordicsemi.android.blinky.profile.data.e_lock_state;
 import no.nordicsemi.android.blinky.profile.data.e_window_state;
 import no.nordicsemi.android.log.LogContract;
@@ -64,6 +65,8 @@ public class BlinkyManager extends ObservableBleManager {
 	private final static UUID LBS_UUID_WINDOW_CMD_CHAR = UUID.fromString("00005305-e91e-4df7-a812-0c16593976e5");
 	/** Limit Switch Status characteristic UUID */
 	private final static UUID LBS_UUID_LIM_SW_STS_CHAR = UUID.fromString("00005306-e91e-4df7-a812-0c16593976e5");
+	/** Set Open distance characteristic UUID */
+	private final static UUID LBS_UUID_WIN_OPEN_DIST_CMD_CHAR = UUID.fromString("00005307-e91e-4df7-a812-0c16593976e5");
 
 	private final MutableLiveData<Boolean> reqWindowCmd = new MutableLiveData<>();
 	private final MutableLiveData<Float> batVoltState = new MutableLiveData<>();
@@ -71,15 +74,11 @@ public class BlinkyManager extends ObservableBleManager {
 	private final MutableLiveData<Boolean> buttonState = new MutableLiveData<>();
 	private final MutableLiveData<e_window_state> windowState = new MutableLiveData<>();
 	private final MutableLiveData<e_lock_state> lockState = new MutableLiveData<>();
+	private final MutableLiveData<Byte> reqWnwOpenDistanceCmd = new MutableLiveData<>();
 
-	private BluetoothGattCharacteristic buttonCharacteristic, batVoltCharacteristic,motVoltCharacteristic,winLockCharacteristic, reqWindowCharacteristic;
+	private BluetoothGattCharacteristic buttonCharacteristic, batVoltCharacteristic,motVoltCharacteristic,winLockCharacteristic, reqWindowCharacteristic, reqWindowOpenDistCharacteristic;
 	private LogSession logSession;
 	private boolean supported;
-	private boolean reqWindowsts;
-	private float batVoltActual;
-	private float motVoltActual;
-	private e_window_state window_state;
-	private e_lock_state lock_state;
 
 	public BlinkyManager(@NonNull final Context context) {
 		super(context);
@@ -96,9 +95,6 @@ public class BlinkyManager extends ObservableBleManager {
 	public final LiveData<Boolean> getButtonState() {
 		return buttonState;
 	}
-	public final LiveData<Boolean> getWindowRequest() {
-		return reqWindowCmd;
-	}
 
 	public final LiveData<e_lock_state> getLockState()
 	{
@@ -108,6 +104,8 @@ public class BlinkyManager extends ObservableBleManager {
 	{
 		return windowState;
 	}
+
+	public final LiveData<Byte> getOpenDistance(){ return reqWnwOpenDistanceCmd; }
 
 	@NonNull
 	@Override
@@ -173,9 +171,8 @@ public class BlinkyManager extends ObservableBleManager {
 		@Override
 		public void onBatVoltStateChanged(@NonNull final BluetoothDevice device,
 									  final Integer raw_data) {
-			batVoltActual = (float)raw_data/100.0f;
 			log(LogContract.Log.Level.APPLICATION, "Battery Voltage RAW " + raw_data);
-			batVoltState.setValue(batVoltActual);
+			batVoltState.setValue((float)raw_data/100.0f);
 		}
 
 		@Override
@@ -190,9 +187,8 @@ public class BlinkyManager extends ObservableBleManager {
 		@Override
 		public void onMotVoltStateChanged(@NonNull final BluetoothDevice device,
 									  final Integer raw_data) {
-			motVoltActual = (float)raw_data/100.0f;
 			log(LogContract.Log.Level.APPLICATION, "Motor Voltage RAW " + raw_data);
-			motVoltState.setValue(motVoltActual);
+			motVoltState.setValue((float)raw_data/100.0f);
 		}
 
 		@Override
@@ -207,16 +203,21 @@ public class BlinkyManager extends ObservableBleManager {
 		@Override
 		public void onWindowStateChanged(@NonNull final BluetoothDevice device,
 									  final e_window_state state) {
-			window_state = state;
 			log(LogContract.Log.Level.APPLICATION, "Window State " + state);
 			windowState.setValue(state);
 		}
 		@Override
 		public void onLockStateChanged(@NonNull final BluetoothDevice device,
 									  final e_lock_state state) {
-			lock_state = state;
 			log(LogContract.Log.Level.APPLICATION, "Lock State " + state);
 			lockState.setValue(state);
+		}
+
+		@Override
+		public void onWindowDistanceChanged(@NonNull final BluetoothDevice device,
+									   final byte distance) {
+			log(LogContract.Log.Level.APPLICATION, "Window Open Distance " + distance);
+			reqWnwOpenDistanceCmd.setValue(distance);
 		}
 
 		@Override
@@ -226,6 +227,10 @@ public class BlinkyManager extends ObservableBleManager {
 			log(Log.WARN, "Invalid data received: " + data);
 		}
 	};
+
+	/**
+	 * Add callback here same as above
+	 */
 
 	/**
 	 * BluetoothGatt callbacks object.
@@ -255,12 +260,19 @@ public class BlinkyManager extends ObservableBleManager {
 				motVoltCharacteristic = service.getCharacteristic(LBS_UUID_MOT_VOLT_CHAR);
 				winLockCharacteristic = service.getCharacteristic(LBS_UUID_WINDOW_CHAR);
 				reqWindowCharacteristic = service.getCharacteristic(LBS_UUID_WINDOW_CMD_CHAR);
+				reqWindowOpenDistCharacteristic = service.getCharacteristic(LBS_UUID_WIN_OPEN_DIST_CMD_CHAR);
 			}
 
 			boolean cmdWriteRequest = false;
 			if (reqWindowCmd != null) {
 				final int rxProperties = reqWindowCharacteristic.getProperties();
 				cmdWriteRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0;
+			}
+
+			boolean cmdWriteWndwDistanceRequest = false;
+			if (reqWnwOpenDistanceCmd != null) {
+				final int rxProperties = reqWindowOpenDistCharacteristic.getProperties();
+				cmdWriteWndwDistanceRequest = (rxProperties & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0;
 			}
 
 			boolean batVoltNotifyRequest = false;
@@ -285,6 +297,7 @@ public class BlinkyManager extends ObservableBleManager {
 					(batVoltCharacteristic != null && batVoltNotifyRequest) &&
 					(winLockCharacteristic != null && winLockNotifyRequest) &&
 					(reqWindowCharacteristic != null && cmdWriteRequest) &&
+					(reqWindowOpenDistCharacteristic != null && cmdWriteWndwDistanceRequest) &&
 					(motVoltCharacteristic != null && motVoltNotifyRequest);
 			return supported;
 		}
@@ -296,6 +309,7 @@ public class BlinkyManager extends ObservableBleManager {
 			motVoltCharacteristic = null;
 			winLockCharacteristic = null;
 			reqWindowCharacteristic = null;
+			reqWindowOpenDistCharacteristic = null;
 		}
 	}
 
@@ -309,9 +323,30 @@ public class BlinkyManager extends ObservableBleManager {
 		if (reqWindowCharacteristic == null)
 			return;
 
-		log(Log.VERBOSE, "Window State " + (on ? "ON" : "OFF") + "...");
+		log(LogContract.Log.Level.APPLICATION, "Window State " + (on ? "ON" : "OFF") + "...");
 		writeCharacteristic(reqWindowCharacteristic,
 				on ? ReqWindowState.turnOn() : ReqWindowState.turnOff())
 				.with(windowLockCallback).enqueue();
+	}
+
+	/**
+	 * Sends a request to the device to set window open distance
+	 *
+	 * @param distance distance in cms of how much window to open
+	 */
+	public void setWindowOpenDistance(final byte distance) {
+		// Are we connected?
+		if (reqWindowOpenDistCharacteristic == null)
+			return;
+
+		try {
+
+			log(LogContract.Log.Level.APPLICATION, "Window Open Distance " + distance + "cm...");
+			writeCharacteristic(reqWindowOpenDistCharacteristic,Data.opCode(distance)).with(windowLockCallback).enqueue();
+		}
+		catch (Exception e)
+		{
+			log(LogContract.Log.Level.APPLICATION, e.toString());
+		}
 	}
 }

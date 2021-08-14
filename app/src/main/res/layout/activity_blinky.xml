@@ -201,6 +201,55 @@
 					android:layout_height="match_parent">
 
 					<com.google.android.material.appbar.MaterialToolbar
+						android:id="@+id/open_distance_tool_bar"
+						android:layout_width="0dp"
+						android:layout_height="?actionBarSize"
+						app:layout_constraintLeft_toLeftOf="parent"
+						app:layout_constraintRight_toRightOf="parent"
+						app:layout_constraintTop_toTopOf="parent"
+						app:logo="@drawable/ic_lock_unlocked"
+						app:title="@string/title_open_distance"
+						app:titleMarginStart="@dimen/toolbar_title_margin" />
+
+					<com.google.android.material.textview.MaterialTextView
+						android:id="@+id/open_distance_summary"
+						android:layout_width="0dp"
+						android:layout_height="wrap_content"
+						android:paddingStart="@dimen/activity_horizontal_margin"
+						android:paddingEnd="@dimen/activity_horizontal_margin"
+						android:text="@string/open_distance_summary"
+						android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+						app:layout_constraintLeft_toLeftOf="parent"
+						app:layout_constraintTop_toBottomOf="@+id/open_distance_tool_bar" />
+
+					<SeekBar
+						android:id="@+id/distance_seek_bar"
+						android:layout_width="301dp"
+						android:layout_height="16dp"
+						android:max="40"
+						android:min="5"
+						app:layout_constraintBottom_toBottomOf="parent"
+						app:layout_constraintEnd_toEndOf="parent"
+						app:layout_constraintHorizontal_bias="0.238"
+						app:layout_constraintLeft_toLeftOf="parent"
+						app:layout_constraintStart_toEndOf="@+id/open_distance_summary"
+						app:layout_constraintTop_toBottomOf="@+id/open_distance_tool_bar"
+						app:layout_constraintVertical_bias="0.0" />
+
+
+				</androidx.constraintlayout.widget.ConstraintLayout>
+			</com.google.android.material.card.MaterialCardView>
+
+			<com.google.android.material.card.MaterialCardView
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginTop="@dimen/activity_horizontal_margin">
+
+				<androidx.constraintlayout.widget.ConstraintLayout
+					android:layout_width="match_parent"
+					android:layout_height="match_parent">
+
+					<com.google.android.material.appbar.MaterialToolbar
 						android:id="@+id/bat_volt_tool_bar"
 						android:layout_width="0dp"
 						android:layout_height="?actionBarSize"

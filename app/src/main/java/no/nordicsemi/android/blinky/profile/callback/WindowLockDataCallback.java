@@ -37,6 +37,7 @@ public abstract class WindowLockDataCallback implements ProfileDataCallback, Dat
 
     e_window_state window_state;
     e_lock_state lock_state;
+    byte distance;
 
     @Override
     public void onDataReceived(@NonNull final BluetoothDevice device, @NonNull final Data data) {
@@ -49,16 +50,19 @@ public abstract class WindowLockDataCallback implements ProfileDataCallback, Dat
     }
 
     private void parse(@NonNull final BluetoothDevice device, @NonNull final Data data) {
-        if (data.size() != 1) {
+        if (data.size() != 4) {
             onInvalidDataReceived(device, data);
             return;
         }
 
-        final int raw_reading = data.getIntValue(Data.FORMAT_UINT8, 0);
+        final int raw_reading = data.getIntValue(Data.FORMAT_UINT32, 0);
         window_state = e_window_state.fromInteger((raw_reading & 0xF0) >> 4);
         onWindowStateChanged(device, window_state);
 
         lock_state = e_lock_state.fromInteger(raw_reading & 0x0F);
         onLockStateChanged(device, lock_state);
+
+        byte open_distance = (byte)((raw_reading >> 8) & 0x3F);
+        onWindowDistanceChanged(device,open_distance);
     }
 }

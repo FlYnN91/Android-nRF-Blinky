@@ -35,6 +35,7 @@
 	<string name="default_window_state">UNKNOWN</string>
 	<string name="title_window_state">Window Status</string>
 	<string name="title_lock_state">Lock Status</string>
+	<string name="title_open_distance">Open Distance</string>
 	<string name="title_led_state">Battery Voltage</string>
 	<string name="title_mot_volt_state">Motor Voltage</string>
 	<string name="title_button_state">Button</string>
@@ -46,6 +47,7 @@
 	<string name="led_summary">Battery Voltage state</string>
 	<string name="mot_volt_summary">Motor Operating state</string>
 	<string name="lock_sts_summary">Lock state</string>
+	<string name="open_distance_summary">Extension</string>
 	<string name="window_sts_summary">Window state</string>
 	<string name="button_summary">Press Button 1 on the dev kit.</string>
 

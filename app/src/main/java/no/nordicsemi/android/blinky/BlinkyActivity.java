@@ -26,6 +26,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -51,6 +52,7 @@ public class BlinkyActivity extends AppCompatActivity {
 	@BindView(R.id.mot_volt_state) TextView motVoltState;
 	@BindView(R.id.lock_state) TextView lockState;
 	@BindView(R.id.window_state) TextView windowState;
+	@BindView(R.id.distance_seek_bar) SeekBar distanceSeek;
 	@BindView(R.id.window_sts_tool_bar) MaterialToolbar window_toolbar;
 	@BindView(R.id.lock_sts_tool_bar) MaterialToolbar lock_toolbar;
 	@BindView(R.id.req_win_state) SwitchMaterial req_win_state;
@@ -82,10 +84,28 @@ public class BlinkyActivity extends AppCompatActivity {
 		final TextView batVoltState = findViewById(R.id.bat_volt_state);
 		final TextView lockState = findViewById(R.id.lock_state);
 		final TextView windowState = findViewById(R.id.window_state);
+		final SeekBar distanceSeek = findViewById(R.id.distance_seek_bar);
 		final LinearLayout progressContainer = findViewById(R.id.progress_container);
 		final TextView connectionState = findViewById(R.id.connection_state);
 		final View content = findViewById(R.id.device_container);
 		final View notSupported = findViewById(R.id.not_supported);
+
+		distanceSeek.setProgress(5);
+		distanceSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+			int progressChangedValue = 0;
+
+			public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+				progressChangedValue = progress;
+			}
+
+			public void onStartTrackingTouch(SeekBar seekBar) {
+				// TODO Auto-generated method stub
+			}
+
+			public void onStopTrackingTouch(SeekBar seekBar) {
+				viewModel.setOpenDistance((byte) seekBar.getProgress());
+			}
+		});
 
 		req_win_state.setOnCheckedChangeListener((buttonView, isChecked) -> viewModel.setWindowRequest(isChecked));
 		viewModel.getConnectionState().observe(this, state -> {
@@ -173,6 +193,9 @@ public class BlinkyActivity extends AppCompatActivity {
 					windowState.setText(R.string.default_window_state);
 					break;
 			}
+		});
+		viewModel.getWindowOpenDistance().observe(this, distance -> {
+			distanceSeek.setProgress(distance);
 		});
 	}
 

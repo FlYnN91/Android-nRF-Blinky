@@ -39,4 +39,5 @@ public interface WindowLockCallback {
      */
     void onWindowStateChanged(@NonNull final BluetoothDevice device, final e_window_state on);
     void onLockStateChanged(@NonNull final BluetoothDevice device, final e_lock_state on);
+    void onWindowDistanceChanged(@NonNull final BluetoothDevice device, final byte distance);
 }
